@@ -37,7 +37,7 @@ Reviewers missing:
   ❌ [none]
 
 Tools:
-  ✅ jq       (JSON parser — required for Claude output)
+  ✅ jq       (shell mode only — for Opus CLI output parsing)
 ```
 
 If a reviewer binary is missing, show how to install it:
@@ -139,7 +139,7 @@ Display the reviewer plan:
 Reviewer plan (team mode):
   [✅ cli / ⚡ teammate]  codex   — The Executor
   [✅ cli / ⚡ teammate]  gemini  — The Architect
-  [✅ cli / ⚡ teammate]  opus    — The Skeptic
+  ⚡ teammate             opus    — The Skeptic
 ```
 
 Where `⚡ teammate` indicates a native Claude agent reviewer. Opus is always `⚡ teammate` in team/agent mode — no CLI subprocess needed.
