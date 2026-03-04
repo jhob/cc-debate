@@ -1,6 +1,6 @@
 ---
 description: Check LiteLLM proxy connectivity, list available models, validate debate-litellm.json config, and print permission allowlist for unattended operation.
-allowed-tools: Bash(curl -s:*), Bash(bash ~/.claude/debate-scripts/debate-setup.sh:*), Bash(jq:*)
+allowed-tools: Bash(curl -s:*), Bash(bash ~/.claude/debate-scripts/debate-setup.sh:*), Bash(jq:*), Bash(which:*), Bash(ls:*)
 ---
 
 # debate — LiteLLM Setup Check
@@ -17,7 +17,7 @@ which jq
 ```
 
 Report:
-```
+```text
 ## debate — LiteLLM Setup Check
 
 ### Tools
@@ -34,14 +34,14 @@ Both are required. If missing:
 Read `~/.claude/debate-litellm.json`. Report:
 
 - File exists → show the parsed config:
-  ```
+  ```text
   ### Config: ~/.claude/debate-litellm.json
     Base URL:  http://localhost:8200/v1
     API Key:   [set] / [not set]
     Reviewers: opus (claude-opus-4-6), deepseek (deepseek.v3-v1:0), ...
   ```
 - File missing → show how to create it:
-  ```
+  ```text
   ❌ Config not found: ~/.claude/debate-litellm.json
 
   Create it with this template:
@@ -75,7 +75,7 @@ Report:
 
 Parse the `/models` response and list all model IDs:
 
-```
+```text
 ### Available Models (via LiteLLM)
   - claude-opus-4-6
   - claude-sonnet-4-6
@@ -87,7 +87,7 @@ Parse the `/models` response and list all model IDs:
 
 For each reviewer in the config, check if its `model` value appears in the `/models` response:
 
-```
+```text
 ### Reviewer Model Validation
   ✅ opus:     claude-opus-4-6    (available)
   ✅ deepseek: deepseek.v3-v1:0   (available)
@@ -121,11 +121,13 @@ Report:
 
 ## Step 8: Print permission allowlist
 
-```
+```text
 ### Permission Allowlist
 
 To run /debate:litellm-review without approval prompts, add to ~/.claude/settings.json:
+```
 
+```json
 {
   "permissions": {
     "allow": [
@@ -144,7 +146,7 @@ To run /debate:litellm-review without approval prompts, add to ~/.claude/setting
 
 ## Step 9: Print summary
 
-```
+```text
 ### Summary
 
   LiteLLM:   ✅ reachable (http://localhost:8200)

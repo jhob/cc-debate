@@ -55,6 +55,21 @@ if [ ! -f "$WORK_DIR/plan.md" ]; then
   exit 1
 fi
 
+# --- Trap: ensure exit file is always written ---
+
+create_exit_file() {
+  local code="${1:-1}"
+  local reason="${2:-unknown error}"
+  if [ -n "$WORK_DIR" ] && [ -n "$REVIEWER" ]; then
+    echo "$code" > "$WORK_DIR/${REVIEWER}-exit.txt"
+    if [ ! -f "$WORK_DIR/${REVIEWER}-output.md" ]; then
+      echo "invoke-litellm.sh: $reason" > "$WORK_DIR/${REVIEWER}-output.md"
+    fi
+  fi
+}
+
+trap 'create_exit_file "$?" "unexpected exit"' EXIT
+
 # --- Config ---
 
 CONFIG_FILE="$HOME/.claude/debate-litellm.json"
@@ -68,9 +83,9 @@ CONFIG_SYSTEM_PROMPT=""
 if [ -f "$CONFIG_FILE" ]; then
   BASE_URL=$(jq -r '.base_url // "http://localhost:8200/v1"' "$CONFIG_FILE")
   API_KEY=$(jq -r '.api_key // ""' "$CONFIG_FILE")
-  CONFIG_MODEL=$(jq -r ".reviewers.\"$REVIEWER\".model // empty" "$CONFIG_FILE")
-  CONFIG_TIMEOUT=$(jq -r ".reviewers.\"$REVIEWER\".timeout // empty" "$CONFIG_FILE")
-  CONFIG_SYSTEM_PROMPT=$(jq -r ".reviewers.\"$REVIEWER\".system_prompt // empty" "$CONFIG_FILE")
+  CONFIG_MODEL=$(jq -r --arg rev "$REVIEWER" '.reviewers[$rev].model // empty' "$CONFIG_FILE")
+  CONFIG_TIMEOUT=$(jq -r --arg rev "$REVIEWER" '.reviewers[$rev].timeout // empty' "$CONFIG_FILE")
+  CONFIG_SYSTEM_PROMPT=$(jq -r --arg rev "$REVIEWER" '.reviewers[$rev].system_prompt // empty' "$CONFIG_FILE")
 else
   echo "invoke-litellm.sh: config not found at $CONFIG_FILE — using defaults" >&2
 fi
@@ -165,6 +180,7 @@ set -e
 if [ "$EXIT_CODE" -eq 28 ] || [ "$EXIT_CODE" -eq 124 ]; then
   echo "[$REVIEWER] Timed out after ${TIMEOUT}s." >&2
   echo "124" > "$WORK_DIR/${REVIEWER}-exit.txt"
+  trap - EXIT
   exit 124
 elif [ "$EXIT_CODE" -ne 0 ]; then
   echo "[$REVIEWER] curl failed (exit $EXIT_CODE)." >&2
@@ -173,6 +189,7 @@ elif [ "$EXIT_CODE" -ne 0 ]; then
     cat "$WORK_DIR/${REVIEWER}-stderr.log"
   } > "$WORK_DIR/${REVIEWER}-output.md"
   echo "$EXIT_CODE" > "$WORK_DIR/${REVIEWER}-exit.txt"
+  trap - EXIT
   exit "$EXIT_CODE"
 fi
 
@@ -185,6 +202,7 @@ if [ -n "$ERROR" ]; then
   echo "[$REVIEWER] API error: $ERROR" >&2
   echo "API error from $MODEL: $ERROR" > "$WORK_DIR/${REVIEWER}-output.md"
   echo "1" > "$WORK_DIR/${REVIEWER}-exit.txt"
+  trap - EXIT
   exit 1
 fi
 
@@ -196,6 +214,7 @@ if [ -z "$CONTENT" ]; then
     cat "$WORK_DIR/${REVIEWER}-raw.json"
   } > "$WORK_DIR/${REVIEWER}-output.md"
   echo "1" > "$WORK_DIR/${REVIEWER}-exit.txt"
+  trap - EXIT
   exit 1
 fi
 
@@ -203,4 +222,5 @@ echo "$CONTENT" > "$WORK_DIR/${REVIEWER}-output.md"
 echo "0" > "$WORK_DIR/${REVIEWER}-exit.txt"
 echo "[$REVIEWER] Review received." >&2
 
+trap - EXIT
 exit 0

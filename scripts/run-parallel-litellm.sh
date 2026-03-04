@@ -45,13 +45,13 @@ fi
 EXIT_FILES=()
 
 for NAME in "${REVIEWERS[@]}"; do
-  MODEL=$(jq -r ".reviewers.\"$NAME\".model // empty" "$CONFIG_FILE")
+  MODEL=$(jq -r --arg name "$NAME" '.reviewers[$name].model // empty' "$CONFIG_FILE")
   if [ -z "$MODEL" ]; then
     echo "[debate] Skipping $NAME — no model in config" >&2
     continue
   fi
 
-  TIMEOUT=$(jq -r ".reviewers.\"$NAME\".timeout // 120" "$CONFIG_FILE")
+  TIMEOUT=$(jq -r --arg name "$NAME" '.reviewers[$name].timeout // 120' "$CONFIG_FILE")
 
   echo "[debate] Spawning $NAME ($MODEL, timeout: ${TIMEOUT}s)..." >&2
   rm -f "$WORK_DIR/${NAME}-exit.txt"
@@ -86,6 +86,7 @@ done
 
 if [ "$ELAPSED" -ge "$MAX_WAIT" ]; then
   echo "[debate] Timed out waiting for reviewers after ${MAX_WAIT}s." >&2
+  exit 1
+else
+  echo "[debate] All reviewers complete (${ELAPSED}s elapsed)." >&2
 fi
-
-echo "[debate] All reviewers complete (${ELAPSED}s elapsed)." >&2

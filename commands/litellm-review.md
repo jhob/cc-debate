@@ -18,7 +18,7 @@ Arguments:
 ### 1a. Validate config
 
 Read `~/.claude/debate-litellm.json`. If missing, stop:
-```
+```text
 Config not found: ~/.claude/debate-litellm.json
 Run /debate:litellm-setup to create it.
 ```
@@ -32,7 +32,7 @@ curl -s --max-time 5 http://localhost:8200/models > /dev/null 2>&1
 ```
 
 If connection fails, stop:
-```
+```text
 LiteLLM proxy not reachable at <base_url>.
 Start your LiteLLM proxy first, then retry.
 ```
@@ -40,7 +40,7 @@ Start your LiteLLM proxy first, then retry.
 ### 1c. Generate session ID & temp dir
 
 Verify `~/.claude/debate-scripts` exists. If not:
-```
+```text
 ~/.claude/debate-scripts not found.
 Run /debate:setup first to create the stable scripts symlink.
 ```
@@ -106,7 +106,7 @@ Exit code meanings:
 
 For each completed reviewer:
 
-```
+```text
 ---
 ## <Name> Review — Round N (<Model>)
 
@@ -114,7 +114,7 @@ For each completed reviewer:
 ```
 
 For failed/timed-out reviewers:
-```
+```text
 ## <Name> Review — Round N
 
 ⚠️ <Name> timed out after <timeout>s / failed (exit <code>). Skipping.
@@ -126,7 +126,7 @@ For failed/timed-out reviewers:
 
 Read all successful reviewer outputs and categorize:
 
-```
+```text
 ## Synthesis — Round N
 
 ### Unanimous Agreements
@@ -177,7 +177,7 @@ bash "<SCRIPT_DIR>/invoke-litellm.sh" "<WORK_DIR>" "<name>"
 
 Read the updated `<name>-output.md` and present:
 
-```
+```text
 ### Debate Round N — [Topic]
 
 **<Reviewer1>:** [response]
@@ -190,7 +190,7 @@ Read the updated `<name>-output.md` and present:
 
 ## Step 6: Final Report
 
-```
+```text
 ---
 ## LiteLLM Review — Final Report (Round N of 3)
 
@@ -223,7 +223,7 @@ VERDICT: SPLIT — Reviewers disagree. [Summary]. Claude recommends: [proceed/re
    EOF
    ```
 3. Show revisions to user:
-   ```
+   ```text
    ### Revisions (Round N)
    - [What changed and why]
    ```
@@ -246,7 +246,7 @@ VERDICT: SPLIT — Reviewers disagree. [Summary]. Claude recommends: [proceed/re
 6. Return to **Step 2** with incremented round counter
 
 If max rounds (3) reached:
-```
+```text
 ## LiteLLM Review — Max Rounds Reached
 
 3 rounds completed. Remaining concerns:
@@ -263,7 +263,7 @@ Options:
 
 Read `<WORK_DIR>/plan.md` and display:
 
-```
+```text
 ---
 ## Final Plan
 

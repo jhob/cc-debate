@@ -275,7 +275,7 @@ The model ID must match what your LiteLLM proxy exposes. Run `/debate:litellm-se
 
 Runs all configured reviewers in parallel, synthesizes feedback, debates contradictions, and iterates up to 3 revision rounds.
 
-```
+```text
 /debate:litellm-review                    # all configured reviewers
 /debate:litellm-review opus,deepseek      # specific reviewers only
 /debate:litellm-review skip-debate        # skip debate, straight to report
