@@ -82,6 +82,7 @@ CONFIG_SYSTEM_PROMPT=""
 
 if [ -f "$CONFIG_FILE" ]; then
   BASE_URL=$(jq -r '.base_url // "http://localhost:8200/v1"' "$CONFIG_FILE")
+  BASE_URL="${BASE_URL%/}"
   API_KEY=$(jq -r '.api_key // ""' "$CONFIG_FILE")
   CONFIG_MODEL=$(jq -r --arg rev "$REVIEWER" '.reviewers[$rev].model // empty' "$CONFIG_FILE")
   CONFIG_TIMEOUT=$(jq -r --arg rev "$REVIEWER" '.reviewers[$rev].timeout // empty' "$CONFIG_FILE")
@@ -98,6 +99,10 @@ if [ -z "$MODEL" ]; then
 fi
 
 TIMEOUT="${TIMEOUT_ARG:-${CONFIG_TIMEOUT:-120}}"
+if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [ "$TIMEOUT" -le 0 ]; then
+  echo "invoke-litellm.sh: invalid timeout '$TIMEOUT' for '$REVIEWER', using 120s" >&2
+  TIMEOUT=120
+fi
 API_KEY="${API_KEY:-${LITELLM_API_KEY:-}}"
 
 # --- Prompt ---
@@ -195,8 +200,21 @@ fi
 
 # --- Parse response ---
 
-CONTENT=$(jq -r '.choices[0].message.content // empty' "$WORK_DIR/${REVIEWER}-raw.json" 2>/dev/null)
-ERROR=$(jq -r '.error.message // empty' "$WORK_DIR/${REVIEWER}-raw.json" 2>/dev/null)
+PARSE_ERR=0
+CONTENT=$(jq -r '.choices[0].message.content // empty' "$WORK_DIR/${REVIEWER}-raw.json" 2>/dev/null) || PARSE_ERR=1
+ERROR=$(jq -r '.error.message // empty' "$WORK_DIR/${REVIEWER}-raw.json" 2>/dev/null) || PARSE_ERR=1
+
+if [ "$PARSE_ERR" -ne 0 ] && [ -z "$CONTENT" ] && [ -z "$ERROR" ]; then
+  echo "[$REVIEWER] Failed to parse API response (non-JSON or malformed)." >&2
+  {
+    echo "Failed to parse response from $MODEL (non-JSON or malformed). Raw body:"
+    echo ""
+    cat "$WORK_DIR/${REVIEWER}-raw.json" 2>/dev/null || echo "(no raw file)"
+  } > "$WORK_DIR/${REVIEWER}-output.md"
+  echo "1" > "$WORK_DIR/${REVIEWER}-exit.txt"
+  trap - EXIT
+  exit 1
+fi
 
 if [ -n "$ERROR" ]; then
   echo "[$REVIEWER] API error: $ERROR" >&2

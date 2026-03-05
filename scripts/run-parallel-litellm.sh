@@ -15,11 +15,22 @@ if [ -z "$REVIEW_ID" ]; then
   exit 1
 fi
 
+# Sanitize REVIEW_ID: allow only alphanumeric, dashes, underscores
+if ! [[ "$REVIEW_ID" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo "[debate] Invalid REVIEW_ID: must be alphanumeric/dashes/underscores only" >&2
+  exit 1
+fi
+
 WORK_DIR="/tmp/claude/ai-review-${REVIEW_ID}"
 CONFIG_FILE="$HOME/.claude/debate-litellm.json"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 mkdir -p "$WORK_DIR" || { echo "Failed to create $WORK_DIR" >&2; exit 1; }
+
+if [ ! -f "$WORK_DIR/plan.md" ]; then
+  echo "[debate] plan.md not found in $WORK_DIR — nothing to review" >&2
+  exit 1
+fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "Config not found: $CONFIG_FILE" >&2
@@ -83,12 +94,27 @@ done
 
 if [ "$ELAPSED" -ge "$MAX_WAIT" ]; then
   echo "[debate] Timed out waiting for reviewers after ${MAX_WAIT}s." >&2
-  # Clean up prompt files after reviewers are done (or timed out)
   rm -f "$WORK_DIR"/*-prompt.txt
   exit 1
 else
   echo "[debate] All reviewers complete (${ELAPSED}s elapsed)." >&2
 fi
 
+# Aggregate reviewer exit codes — propagate worst failure
+WORST_EXIT=0
+for f in "${EXIT_FILES[@]}"; do
+  if [ -f "$f" ]; then
+    CODE=$(cat "$f" 2>/dev/null)
+    if [[ "$CODE" =~ ^[0-9]+$ ]] && [ "$CODE" -gt "$WORST_EXIT" ]; then
+      WORST_EXIT="$CODE"
+    fi
+  else
+    # Exit file missing means reviewer never completed
+    WORST_EXIT=1
+  fi
+done
+
 # Clean up prompt files after all reviewers have consumed them
 rm -f "$WORK_DIR"/*-prompt.txt
+
+exit "$WORST_EXIT"

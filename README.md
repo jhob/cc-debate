@@ -209,7 +209,7 @@ LiteLLM mode routes all reviewer calls through a local [LiteLLM](https://docs.li
 - **Any model works** — DeepSeek, Gemini via Bedrock, local models, anything LiteLLM can route to
 - **Adding a reviewer = adding a JSON entry** — no code changes, no new scripts
 
-The only dependencies are `curl` and `jq`, both pre-installed on most systems.
+The only dependencies are `curl` and `jq`, commonly available or easy to install (see Prerequisites).
 
 ### Prerequisites
 
@@ -353,7 +353,7 @@ The model returned no content. Check LiteLLM proxy logs for errors. Some models 
 - Gemini runs with `-s` (sandbox) — cannot execute shell commands
 - Gemini runs with `-e ""` — extensions and skills are disabled for each review call
 - Opus runs with `--tools ""` — no tool access; `--disable-slash-commands`; `--strict-mcp-config`; hooks disabled — read-only, stateless review
-- **LiteLLM mode:** JSON payloads are constructed via `jq` — plan content and prompts are never interpolated into shell strings. API calls use `curl` with content passed via `-d` flag from jq-built JSON. All reviewer output is written to temp files in `/tmp/claude/ai-review-*` and cleaned up after the session.
+- **LiteLLM mode:** JSON payloads are constructed via `jq`, which safely escapes plan content and prompts before they reach `curl`. API calls use `curl` with the `-d` flag passing jq-built JSON. Prompt files (`*-prompt.txt`) are cleaned up by `run-parallel-litellm.sh` after each round; work directories in `/tmp/claude/ai-review-*` are cleaned up by the command file's final cleanup step.
 
 ## Custom Reviewers
 
